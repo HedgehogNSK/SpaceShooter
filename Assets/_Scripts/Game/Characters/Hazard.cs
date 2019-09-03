@@ -74,7 +74,8 @@ namespace SpaceShooter
         protected void Explode()
         {
             DestroyAnimation();
-            Destroy(gameObject);            
+            Destroy(gameObject);
+            Destroy(this);
         }
 
         protected void DestroyAnimation()

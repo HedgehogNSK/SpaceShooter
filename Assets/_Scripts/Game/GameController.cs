@@ -14,6 +14,7 @@ namespace SpaceShooter
         
 
 #pragma warning disable CS0649
+        [Header("Enemy spawn settings")]
         [SerializeField] LevelSettings lvlSettings;
         [SerializeField] Vector3 spawnValues;
         [Tooltip("Spawn delay between hazards in seconds inside current wave")]
@@ -22,18 +23,16 @@ namespace SpaceShooter
         [SerializeField] float startWait;
         [Tooltip("Delay in second between waves")]
         [SerializeField] float waveWait;
+        [Range(0.0f,1.0f)]
+        [SerializeField] float enemyShipSpawnOdds =0.5f;
 
-        [SerializeField] Text restartText;
-        [SerializeField] Text gameOverText;
-
+        [Header("Game Control settings")]
         [SerializeField] GameObject GameOverMenu;
         [SerializeField] Button go2menuBtn;
         [SerializeField] Button restartBtn;
         [SerializeField] int menuSceneIndex = 0;
 #pragma warning restore CS0649
-
-        private bool gameOver;
-        private bool restart;
+        
 
         private int score;
         public int Score
@@ -48,16 +47,11 @@ namespace SpaceShooter
         }
 
         PlayerController player;
-        List<Hazard> spawnedEnemies;
 
         void Start()
         {
-            spawnedEnemies = new List<Hazard>();
             ActivateGameOverMenu(false);
-            gameOver = false;
-            restart = false;
-            restartText.text = "";
-            gameOverText.text = "";
+           
             Score = 0;
             StartCoroutine(SpawnWaves());
             player = FindObjectOfType<PlayerController>();
@@ -75,22 +69,11 @@ namespace SpaceShooter
         }
 
         private void GameOverWrapper(HitArgs obj)
-        {            
+        {
+            StopCoroutine(SpawnWaves());
             GameOver();
         }
 
-#if KEYBOARD
-        void Update()
-        {
-            if (restart)
-            {
-                if (Input.GetKeyDown(KeyCode.R))
-                {
-                    RestartGame();
-                }
-            }
-        }
-#endif
 
         IEnumerator SpawnWaves()
         {
@@ -99,43 +82,26 @@ namespace SpaceShooter
             {
                 for (int i = 0; i < lvlSettings.HazardsForWaveCount; i++)
                 {
-                    TrySpawnEnemy();
-
+                    Try2SpawnEnemyShop();
                     SpawnHazard(lvlSettings.GetRandomAsteroid);
                     
                     
                     yield return new WaitForSeconds(spawnWait);
                 }
                 yield return new WaitForSeconds(waveWait);
-
-                if (gameOver)
-                {
-                    break;
-                }
             }
         }
 
-        //private void SpawnEnemy()
-        //{
-        //    Vector3 spawnPosition = new Vector3(UnityEngine.Random.Range(-spawnValues.x, spawnValues.x), spawnValues.y, spawnValues.z);
-        //    Quaternion spawnRotation = Quaternion.identity;
-        //    IHitable hitable = Instantiate(lvlSettings.GetRandomEnemy, spawnPosition, spawnRotation).GetComponent<IHitable>();
-        //    if (hitable != null) hitable.OnDie += AddScore;
-        //}
 
-        private bool TrySpawnEnemy()
+        private bool Try2SpawnEnemyShop()
         {
-            
-            if (spawnedEnemies.Sum(x => x.Health) < lvlSettings.EnemyShips.Max(ship => ship.Health))
+            float rand = UnityEngine.Random.Range(0.0f, 1.0f);
+            if (rand < enemyShipSpawnOdds)
             {
-                float rand = UnityEngine.Random.Range(0.0f, 1.0f);
-                if (rand > 0.8f)
-                {
-                    spawnedEnemies.Add(SpawnHazard(lvlSettings.GetRandomEnemy));
-                }
+               SpawnHazard(lvlSettings.GetRandomEnemy);
                 return true;
             }
-            Debug.Log(spawnedEnemies.Sum(x => x.Health) +":"+ lvlSettings.EnemyShips.Max(ship => ship.Health));
+
             return false;
             
         }
@@ -157,7 +123,6 @@ namespace SpaceShooter
                 Hazard hazard = hitArgs.Victim.GetComponent<Hazard>();
                 if (hazard)
                 {
-                    spawnedEnemies.Remove(hazard);
                     Score += hazard.Reward;
                 }
             }
@@ -172,8 +137,7 @@ namespace SpaceShooter
                 InputFireController.OnFire -= player.Fire;
             }                      
             
-            gameOver = true;
-            ActivateGameOverMenu(gameOver);
+            ActivateGameOverMenu(true);
         }
 
         private void ActivateGameOverMenu(bool active)
@@ -181,29 +145,15 @@ namespace SpaceShooter
             GameOverMenu.SetActive(active);
             if (active)
             {
-                gameOverText.text = "Game Over!";
                 go2menuBtn.onClick.AddListener(LoadMenu);
                 restartBtn.onClick.AddListener(RestartGame);
             }
             else
-            {
-                
+            {                
                 go2menuBtn.onClick.RemoveListener(LoadMenu);
                 restartBtn.onClick.RemoveListener(RestartGame);
             }
 
-#if KEYBOARD
-            if (active)
-            {
-                restartText.text = "Press 'R' for Restart";
-                restart = true;
-            }
-            else
-            {
-                restart = false;
-
-            }
-#endif
         }
 
         public void RestartGame()

@@ -5,13 +5,16 @@ namespace SpaceShooter
 {
     public class EvasiveManeuver : MonoBehaviour
     {
-        public Boundary boundary;
-        public float tilt;
-        public float dodge;
-        public float smoothing;
-        public Vector2 startWait;
-        public Vector2 maneuverTime;
-        public Vector2 maneuverWait;
+#pragma warning disable CS0649
+
+        [SerializeField] Boundary boundary;
+        [SerializeField] float tilt;
+        [SerializeField] float dodge;
+        [SerializeField] float smoothing;
+        [SerializeField] Vector2 startWait;
+        [SerializeField] Vector2 maneuverTime;
+        [SerializeField] Vector2 maneuverWait;
+#pragma warning restore CS0649
 
         private float currentSpeed;
         private float targetManeuver;
@@ -38,7 +41,7 @@ namespace SpaceShooter
 
         void FixedUpdate()
         {
-            float newManeuver = Mathf.MoveTowards(GetComponent<Rigidbody>().velocity.x, targetManeuver, smoothing * Time.deltaTime);
+            float newManeuver = Mathf.MoveTowards(rigid.velocity.x, targetManeuver, smoothing * Time.deltaTime);
             rigid.velocity = new Vector3(newManeuver, 0.0f, currentSpeed);
             rigid.position = new Vector3
             (
